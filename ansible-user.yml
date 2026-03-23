@@ -1,0 +1,43 @@
+---
+- name: Настройка пользователя ansible
+  hosts: prod
+  become: yes
+  vars:
+    ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAA... ваш публичный ключ управляющей ноды"
+    new_user: "ansible"
+    
+  tasks:
+    - name: Создать пользователя
+      user:
+        name: "{{ new_user }}"
+        shell: /bin/bash
+        create_home: yes
+        groups: sudo
+        append: yes
+        
+    - name: Настроить sudo без пароля
+      copy:
+        content: "{{ new_user }} ALL=(ALL) NOPASSWD:ALL\n"
+        dest: "/etc/sudoers.d/{{ new_user }}"
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+        
+    - name: Создать .ssh директорию
+      file:
+        path: "/home/{{ new_user }}/.ssh"
+        state: directory
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: '0700'
+        
+    - name: Добавить публичный SSH ключ
+      copy:
+        content: "{{ ssh_public_key }}\n"
+        dest: "/home/{{ new_user }}/.ssh/authorized_keys"
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: '0600'
+        
+    - name: Вывести сообщение об успешном завершении
+      debug:
+        msg: "Готово! Пользователь {{ new_user }} создан и SSH ключ добавлен"

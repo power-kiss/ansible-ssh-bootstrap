@@ -1,0 +1,9 @@
+---
+- name: Копировать SSH ключ
+  hosts: prod
+  gather_facts: no
+  tasks:
+    - name: Добавить публичный ключ
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
